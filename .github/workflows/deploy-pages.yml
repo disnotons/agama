@@ -34,9 +34,9 @@ jobs:
           test -f style.css
           test -f app.js
           test -f volumes.js
-          grep -q '제1~10권' index.html
-          grep -q '\[10,256,272,17,"published"' volumes.js
-          for n in 01 02 03 04 05 06; do test -f "volumes/$n.md"; done
+          grep -q '제1~11권' index.html
+          grep -q '\[11,273,282,10,"published"' volumes.js
+          for n in 01 02 03 04 05 06 11; do test -f "volumes/$n.md"; done
           test -f volumes/07.seg1.mdpart
           test -f volumes/08.seg1.mdpart
           test -f volumes/09.seg1.mdpart
@@ -76,9 +76,9 @@ jobs:
           ok=0
           for i in $(seq 1 12); do
             if curl -fsSL --max-time 20 "${base}health.txt" | grep -q 'agama-pages-ok' \
-              && curl -fsSL --max-time 20 "${base}" | grep -q '잡아함경 쉬운 완전읽기' \
-              && curl -fsSL --max-time 20 "${base}reader.html?vol=10" | grep -q '잡아함경 쉬운 완전읽기' \
-              && curl -fsSL --max-time 20 "${base}volumes/10.seg1.mdpart" | grep -q '제10권'; then
+              && curl -fsSL --max-time 20 "${base}" | grep -q '제1~11권' \
+              && curl -fsSL --max-time 20 "${base}reader.html?vol=11" | grep -q '잡아함경 쉬운 완전읽기' \
+              && curl -fsSL --max-time 20 "${base}volumes/11.md" | grep -q '제11권'; then
               ok=1
               break
             fi
