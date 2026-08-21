@@ -10,10 +10,6 @@ permissions:
   pages: write
   id-token: write
 
-environment:
-  name: github-pages
-  url: ${{ steps.deployment.outputs.page_url }}
-
 concurrency:
   group: agama-pages
   cancel-in-progress: true
@@ -21,6 +17,9 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout Agama
         uses: actions/checkout@v4
@@ -41,7 +40,6 @@ jobs:
           test -f "$src/reader.js"
           test -f "$src/volumes.js"
           cp -R "$src"/. .
-          # The old site linked back to a parent shelf that does not exist in this standalone repo.
           python - <<'PY'
           from pathlib import Path
           p=Path('index.html')
@@ -69,7 +67,6 @@ jobs:
           grep -q '제1~10권' index.html
           grep -q '\[10,256,272,17,"published"' volumes.js
           for n in 01 02 03 04 05 06; do test -f "volumes/$n.md"; done
-          # Volumes 7-10 are intentionally split for reliable browser loading.
           test -f volumes/07.seg1.mdpart
           test -f volumes/08.seg1.mdpart
           test -f volumes/09.seg1.mdpart
