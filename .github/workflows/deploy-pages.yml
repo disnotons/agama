@@ -54,6 +54,15 @@ jobs:
           test -f volumes/15.seg2.mdpart
           test -f volumes/15.seg3.mdpart
           grep -q "15:\['15.seg1.mdpart'" reader.js
+          test -f ma/index.html
+          test -f ma/reader.html
+          test -f ma/reader.js
+          test -f ma/app.js
+          test -f ma/volumes.js
+          test -f ma/toc.html
+          test -f ma/data/01.part1
+          test -f ma/data/02.part1
+          grep -q '중아함경 쉬운 완전읽기' ma/index.html
           echo 'Agama source verification passed.'
 
       - name: Stage Pages artifact
@@ -64,6 +73,7 @@ jobs:
           mkdir -p dist
           cp index.html reader.html reader.js style.css app.js volumes.js dist/
           cp -R volumes dist/
+          cp -R ma dist/
           printf 'agama-pages-ok\n' > dist/health.txt
           touch dist/.nojekyll
 
@@ -88,15 +98,20 @@ jobs:
           base="${PAGE_URL%/}/"
           ok=0
           for i in $(seq 1 12); do
-            rm -f /tmp/agama-health /tmp/agama-index /tmp/agama-reader /tmp/agama-vol15
+            rm -f /tmp/agama-health /tmp/agama-index /tmp/agama-reader /tmp/agama-vol15 /tmp/agama-ma-index /tmp/agama-ma-reader /tmp/agama-ma-data
             if curl -fsSL --max-time 20 "${base}health.txt" -o /tmp/agama-health \
               && curl -fsSL --max-time 20 "${base}" -o /tmp/agama-index \
               && curl -fsSL --max-time 20 "${base}reader.html?vol=15" -o /tmp/agama-reader \
               && curl -fsSL --max-time 20 "${base}volumes/15.seg1.mdpart" -o /tmp/agama-vol15 \
+              && curl -fsSL --max-time 20 "${base}ma/" -o /tmp/agama-ma-index \
+              && curl -fsSL --max-time 20 "${base}ma/reader.html?vol=1" -o /tmp/agama-ma-reader \
+              && curl -fsSL --max-time 20 "${base}ma/data/01.part1" -o /tmp/agama-ma-data \
               && grep -q 'agama-pages-ok' /tmp/agama-health \
               && grep -q '제1~15권' /tmp/agama-index \
               && grep -q '잡아함경 쉬운 완전읽기' /tmp/agama-reader \
-              && grep -q '제15권' /tmp/agama-vol15; then
+              && grep -q '제15권' /tmp/agama-vol15 \
+              && grep -q '중아함경 쉬운 완전읽기' /tmp/agama-ma-index \
+              && grep -q '중아함경 쉬운 완전읽기' /tmp/agama-ma-reader; then
               ok=1
               break
             fi
