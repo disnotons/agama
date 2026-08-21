@@ -37,9 +37,9 @@ jobs:
           test -f style.css
           test -f app.js
           test -f volumes.js
-          grep -q '제1~17권' index.html
-          grep -q '\[17,455,489,35,"published"' volumes.js
-          for n in 01 02 03 04 05 06 11 12 17; do test -f "volumes/$n.md"; done
+          grep -q '제1~18권' index.html
+          grep -q '\[18,490,503,14,"published"' volumes.js
+          for n in 01 02 03 04 05 06 11 12 17 18; do test -f "volumes/$n.md"; done
           test -f volumes/07.seg1.mdpart
           test -f volumes/08.seg1.mdpart
           test -f volumes/09.seg1.mdpart
@@ -56,7 +56,7 @@ jobs:
           test -f volumes/16.seg1.mdpart
           test -f volumes/16.seg2.mdpart
           test -f volumes/16.seg3.mdpart
-          grep -q '제17권' volumes/17.md
+          grep -q '제18권' volumes/18.md
           test -f ma/index.html
           test -f ma/reader.html
           test -f ma/reader.js
@@ -101,18 +101,18 @@ jobs:
           base="${PAGE_URL%/}/"
           ok=0
           for i in $(seq 1 12); do
-            rm -f /tmp/agama-health /tmp/agama-index /tmp/agama-reader /tmp/agama-vol17 /tmp/agama-ma-index /tmp/agama-ma-reader /tmp/agama-ma-data
+            rm -f /tmp/agama-health /tmp/agama-index /tmp/agama-reader /tmp/agama-vol18 /tmp/agama-ma-index /tmp/agama-ma-reader /tmp/agama-ma-data
             if curl -fsSL --max-time 20 "${base}health.txt" -o /tmp/agama-health \
               && curl -fsSL --max-time 20 "${base}" -o /tmp/agama-index \
-              && curl -fsSL --max-time 20 "${base}reader.html?vol=17" -o /tmp/agama-reader \
-              && curl -fsSL --max-time 20 "${base}volumes/17.md" -o /tmp/agama-vol17 \
+              && curl -fsSL --max-time 20 "${base}reader.html?vol=18" -o /tmp/agama-reader \
+              && curl -fsSL --max-time 20 "${base}volumes/18.md" -o /tmp/agama-vol18 \
               && curl -fsSL --max-time 20 "${base}ma/" -o /tmp/agama-ma-index \
               && curl -fsSL --max-time 20 "${base}ma/reader.html?vol=1" -o /tmp/agama-ma-reader \
               && curl -fsSL --max-time 20 "${base}ma/data/01.part1" -o /tmp/agama-ma-data \
               && grep -q 'agama-pages-ok' /tmp/agama-health \
-              && grep -q '제1~17권' /tmp/agama-index \
+              && grep -q '제1~18권' /tmp/agama-index \
               && grep -q '잡아함경 쉬운 완전읽기' /tmp/agama-reader \
-              && grep -q '제17권' /tmp/agama-vol17 \
+              && grep -q '제18권' /tmp/agama-vol18 \
               && grep -q '중아함경 쉬운 완전읽기' /tmp/agama-ma-index \
               && grep -q '중아함경 쉬운 완전읽기' /tmp/agama-ma-reader; then
               ok=1
