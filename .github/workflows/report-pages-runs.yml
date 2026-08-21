@@ -33,3 +33,5 @@ jobs:
           git add .deployment/pages-runs.json
           git diff --cached --quiet || git commit -m 'Record Agama Pages runs [skip ci]'
           git push origin main
+
+# refresh after standalone import
