@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -23,36 +23,6 @@ jobs:
     steps:
       - name: Checkout Agama
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: One-time import from GPT repository
-        if: ${{ hashFiles('index.html') == '' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf /tmp/gpt
-          git clone --depth 1 --filter=blob:none --sparse https://github.com/disnotons/GPT.git /tmp/gpt
-          git -C /tmp/gpt sparse-checkout set '초기불교_완전입문/site/early-texts/samjuk-agama'
-          src='/tmp/gpt/초기불교_완전입문/site/early-texts/samjuk-agama'
-          test -f "$src/index.html"
-          test -f "$src/reader.html"
-          test -f "$src/reader.js"
-          test -f "$src/volumes.js"
-          cp -R "$src"/. .
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('index.html')
-          s=p.read_text(encoding='utf-8')
-          s=s.replace('<a href="../">← 초기경전 쉬운 해설</a>','<a href="./">← 잡아함경 웹북</a>')
-          p.write_text(s,encoding='utf-8')
-          PY
-          printf '\n# Agama\n\n『잡아함경 쉬운 완전읽기』 독립 웹북 저장소입니다.\n\n- 현재 공개: 제1~10권, 제1~272경\n- 전체 계획: 50권, 제1~1362경\n- 원문 기준: CBETA 2026.R1, T02, no.99 『雜阿含經』\n' > README.md
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add README.md index.html reader.html reader.js style.css app.js volumes.js volumes
-          git commit -m 'Import Samyukta Agama webbook volumes 1-10'
-          git push origin main
 
       - name: Verify standalone webbook source
         shell: bash
@@ -86,8 +56,6 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
