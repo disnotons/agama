@@ -14,7 +14,8 @@ const SPLIT_VOLUMES={
   10:['10.seg1.mdpart','10.seg2.mdpart','10.seg3.mdpart'],
   13:['13.seg1.mdpart','13.seg2.mdpart','13.seg3.mdpart'],
   14:['14.seg1.mdpart','14.seg2.mdpart','14.seg3.mdpart'],
-  15:['15.seg1.mdpart','15.seg2.mdpart','15.seg3.mdpart']
+  15:['15.seg1.mdpart','15.seg2.mdpart','15.seg3.mdpart'],
+  16:['16.seg1.mdpart','16.seg2.mdpart','16.seg3.mdpart']
 };
 
 function navHtml(){
