@@ -37,8 +37,8 @@ jobs:
           test -f style.css
           test -f app.js
           test -f volumes.js
-          grep -q '제1~13권' index.html
-          grep -q '\[13,304,342,39,"published"' volumes.js
+          grep -q '제1~14권' index.html
+          grep -q '\[14,343,364,22,"published"' volumes.js
           for n in 01 02 03 04 05 06 11 12; do test -f "volumes/$n.md"; done
           test -f volumes/07.seg1.mdpart
           test -f volumes/08.seg1.mdpart
@@ -47,7 +47,10 @@ jobs:
           test -f volumes/13.seg1.mdpart
           test -f volumes/13.seg2.mdpart
           test -f volumes/13.seg3.mdpart
-          grep -q "13:\['13.seg1.mdpart'" reader.js
+          test -f volumes/14.seg1.mdpart
+          test -f volumes/14.seg2.mdpart
+          test -f volumes/14.seg3.mdpart
+          grep -q "14:\['14.seg1.mdpart'" reader.js
           echo 'Agama source verification passed.'
 
       - name: Stage Pages artifact
@@ -82,15 +85,15 @@ jobs:
           base="${PAGE_URL%/}/"
           ok=0
           for i in $(seq 1 12); do
-            rm -f /tmp/agama-health /tmp/agama-index /tmp/agama-reader /tmp/agama-vol13
+            rm -f /tmp/agama-health /tmp/agama-index /tmp/agama-reader /tmp/agama-vol14
             if curl -fsSL --max-time 20 "${base}health.txt" -o /tmp/agama-health \
               && curl -fsSL --max-time 20 "${base}" -o /tmp/agama-index \
-              && curl -fsSL --max-time 20 "${base}reader.html?vol=13" -o /tmp/agama-reader \
-              && curl -fsSL --max-time 20 "${base}volumes/13.seg1.mdpart" -o /tmp/agama-vol13 \
+              && curl -fsSL --max-time 20 "${base}reader.html?vol=14" -o /tmp/agama-reader \
+              && curl -fsSL --max-time 20 "${base}volumes/14.seg1.mdpart" -o /tmp/agama-vol14 \
               && grep -q 'agama-pages-ok' /tmp/agama-health \
-              && grep -q '제1~13권' /tmp/agama-index \
+              && grep -q '제1~14권' /tmp/agama-index \
               && grep -q '잡아함경 쉬운 완전읽기' /tmp/agama-reader \
-              && grep -q '제13권' /tmp/agama-vol13; then
+              && grep -q '제14권' /tmp/agama-vol14; then
               ok=1
               break
             fi
