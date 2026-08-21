@@ -3,6 +3,9 @@ name: Deploy Agama Pages
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '.deployment/**'
+      - '.github/workflows/report-pages-runs.yml'
   workflow_dispatch:
 
 permissions:
