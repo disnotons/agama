@@ -37,26 +37,41 @@ jobs:
           test -f style.css
           test -f app.js
           test -f volumes.js
-          grep -q '제1~18권' index.html
-          grep -q '\[18,490,503,14,"published"' volumes.js
-          for n in 01 02 03 04 05 06 11 12 17 18; do test -f "volumes/$n.md"; done
-          test -f volumes/07.seg1.mdpart
-          test -f volumes/08.seg1.mdpart
-          test -f volumes/09.seg1.mdpart
-          test -f volumes/10.seg1.mdpart
-          test -f volumes/13.seg1.mdpart
-          test -f volumes/13.seg2.mdpart
-          test -f volumes/13.seg3.mdpart
-          test -f volumes/14.seg1.mdpart
-          test -f volumes/14.seg2.mdpart
-          test -f volumes/14.seg3.mdpart
-          test -f volumes/15.seg1.mdpart
-          test -f volumes/15.seg2.mdpart
-          test -f volumes/15.seg3.mdpart
-          test -f volumes/16.seg1.mdpart
-          test -f volumes/16.seg2.mdpart
-          test -f volumes/16.seg3.mdpart
-          grep -q '제18권' volumes/18.md
+
+          latest_info="$(node <<'NODE'
+          global.window={};
+          require('./volumes.js');
+          const p=window.SA_VOLUMES.filter(v=>v[4]==='published');
+          if(!p.length) process.exit(1);
+          const v=p[p.length-1];
+          process.stdout.write(`${v[0]} ${v[1]} ${v[2]} ${v[3]} ${String(v[0]).padStart(2,'0')}`);
+          NODE
+          )"
+          read -r latest_vol latest_start latest_end latest_count latest_pad <<< "$latest_info"
+
+          grep -q "제1~${latest_vol}권" index.html
+          grep -q "제1~${latest_end}경" index.html
+          grep -q "\[${latest_vol},${latest_start},${latest_end},${latest_count},\"published\"" volumes.js
+
+          for n in $(node <<'NODE'
+          global.window={};
+          require('./volumes.js');
+          for (const v of window.SA_VOLUMES.filter(v=>v[4]==='published')) console.log(String(v[0]).padStart(2,'0'));
+          NODE
+          ); do
+            if test -f "volumes/${n}.md"; then
+              :
+            else
+              test -f "volumes/${n}.seg1.mdpart"
+            fi
+          done
+
+          if test -f "volumes/${latest_pad}.md"; then
+            grep -q "제${latest_vol}권" "volumes/${latest_pad}.md"
+          else
+            grep -q "제${latest_vol}권" "volumes/${latest_pad}.seg1.mdpart"
+          fi
+
           test -f ma/index.html
           test -f ma/reader.html
           test -f ma/reader.js
@@ -66,7 +81,7 @@ jobs:
           test -f ma/data/01.part1
           test -f ma/data/02.part1
           grep -q '중아함경 쉬운 완전읽기' ma/index.html
-          echo 'Agama source verification passed.'
+          echo "Agama source verification passed through volume ${latest_vol}."
 
       - name: Stage Pages artifact
         shell: bash
@@ -99,20 +114,41 @@ jobs:
         run: |
           set -euo pipefail
           base="${PAGE_URL%/}/"
+
+          latest_info="$(node <<'NODE'
+          global.window={};
+          require('./volumes.js');
+          const p=window.SA_VOLUMES.filter(v=>v[4]==='published');
+          if(!p.length) process.exit(1);
+          const v=p[p.length-1];
+          process.stdout.write(`${v[0]} ${v[1]} ${v[2]} ${v[3]} ${String(v[0]).padStart(2,'0')}`);
+          NODE
+          )"
+          read -r latest_vol latest_start latest_end latest_count latest_pad <<< "$latest_info"
+
+          if test -f "volumes/${latest_pad}.md"; then
+            latest_remote="volumes/${latest_pad}.md"
+          else
+            latest_remote="volumes/${latest_pad}.seg1.mdpart"
+          fi
+
           ok=0
           for i in $(seq 1 12); do
-            rm -f /tmp/agama-health /tmp/agama-index /tmp/agama-reader /tmp/agama-vol18 /tmp/agama-ma-index /tmp/agama-ma-reader /tmp/agama-ma-data
+            rm -f /tmp/agama-health /tmp/agama-index /tmp/agama-reader /tmp/agama-volumes /tmp/agama-latest /tmp/agama-ma-index /tmp/agama-ma-reader /tmp/agama-ma-data
             if curl -fsSL --max-time 20 "${base}health.txt" -o /tmp/agama-health \
               && curl -fsSL --max-time 20 "${base}" -o /tmp/agama-index \
-              && curl -fsSL --max-time 20 "${base}reader.html?vol=18" -o /tmp/agama-reader \
-              && curl -fsSL --max-time 20 "${base}volumes/18.md" -o /tmp/agama-vol18 \
+              && curl -fsSL --max-time 20 "${base}reader.html?vol=${latest_vol}" -o /tmp/agama-reader \
+              && curl -fsSL --max-time 20 "${base}volumes.js" -o /tmp/agama-volumes \
+              && curl -fsSL --max-time 20 "${base}${latest_remote}" -o /tmp/agama-latest \
               && curl -fsSL --max-time 20 "${base}ma/" -o /tmp/agama-ma-index \
               && curl -fsSL --max-time 20 "${base}ma/reader.html?vol=1" -o /tmp/agama-ma-reader \
               && curl -fsSL --max-time 20 "${base}ma/data/01.part1" -o /tmp/agama-ma-data \
               && grep -q 'agama-pages-ok' /tmp/agama-health \
-              && grep -q '제1~18권' /tmp/agama-index \
+              && grep -q "제1~${latest_vol}권" /tmp/agama-index \
+              && grep -q "제1~${latest_end}경" /tmp/agama-index \
               && grep -q '잡아함경 쉬운 완전읽기' /tmp/agama-reader \
-              && grep -q '제18권' /tmp/agama-vol18 \
+              && grep -q "\[${latest_vol},${latest_start},${latest_end},${latest_count},\"published\"" /tmp/agama-volumes \
+              && grep -q "제${latest_vol}권" /tmp/agama-latest \
               && grep -q '중아함경 쉬운 완전읽기' /tmp/agama-ma-index \
               && grep -q '중아함경 쉬운 완전읽기' /tmp/agama-ma-reader; then
               ok=1
@@ -121,4 +157,4 @@ jobs:
             sleep 5
           done
           test "$ok" -eq 1
-          echo "Verified live site: ${base}"
+          echo "Verified live site through Agama volume ${latest_vol}: ${base}"
