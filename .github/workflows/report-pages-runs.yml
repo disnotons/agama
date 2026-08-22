@@ -34,4 +34,4 @@ jobs:
           git diff --cached --quiet || git commit -m 'Record Agama Pages runs [skip ci]'
           git push origin main
 
-# refresh after volume 20 deployment
+# diagnostics refresh after SA volume 26 publication
