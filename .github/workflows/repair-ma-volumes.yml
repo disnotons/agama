@@ -1,0 +1,110 @@
+name: Repair MA Volumes 3 4 8
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/repair-ma-volumes.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decode and consolidate MA volumes 3 4 8
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const zlib=require('zlib');
+          const path=require('path');
+          const dir='ma/data';
+          const report=[];
+
+          function decode(files,label){
+            try{
+              let b64=files.map(f=>fs.readFileSync(path.join(dir,f),'utf8')).join('').replace(/\s+/g,'');
+              const rem=b64.length%4;
+              if(rem===1) throw new Error(`invalid base64 length ${b64.length}`);
+              if(rem) b64+='='.repeat(4-rem);
+              const bin=Buffer.from(b64,'base64');
+              const text=zlib.gunzipSync(bin).toString('utf8');
+              if(!text.trim()) throw new Error('decoded text is empty');
+              report.push(`OK ${label}: ${files.join(', ')} -> ${text.length} chars`);
+              return text;
+            }catch(e){
+              report.push(`FAIL ${label}: ${files.join(', ')} :: ${e.message}`);
+              return null;
+            }
+          }
+          function plain(file,label){
+            try{
+              const text=fs.readFileSync(path.join(dir,file),'utf8');
+              report.push(`OK ${label}: ${file} -> ${text.length} chars`);
+              return text;
+            }catch(e){
+              report.push(`FAIL ${label}: ${file} :: ${e.message}`);
+              return null;
+            }
+          }
+          function consolidate(vol,segments){
+            const pieces=[];
+            for(const seg of segments){
+              const text=seg.kind==='plain'?plain(seg.files[0],seg.label):decode(seg.files,seg.label);
+              if(text===null){
+                report.push(`NO FULL FILE volume ${vol}: stopped because ${seg.label} failed`);
+                return false;
+              }
+              pieces.push(text);
+            }
+            const out=pieces.join('\n\n---\n\n');
+            fs.writeFileSync(path.join(dir,`${String(vol).padStart(2,'0')}.full.md`),out);
+            report.push(`WROTE volume ${vol}: ${out.length} chars`);
+            return true;
+          }
+
+          consolidate(3,[
+            {kind:'gzip',label:'v3-base-MA11',files:['03.part1','03.part2','03.part3']},
+            {kind:'gzip',label:'MA12',files:['12.g1','12.g2']},
+            {kind:'plain',label:'MA13',files:['13.md']},
+            {kind:'gzip',label:'MA14',files:['14.g1','14.g2','14.g3']},
+            {kind:'gzip',label:'MA15',files:['15.g1','15.g2','15.g3']},
+            {kind:'gzip',label:'MA16',files:['16.g1','16.g2','16.g3']},
+            {kind:'gzip',label:'MA17',files:['17.g1','17.g2','17.g3']},
+          ]);
+          consolidate(4,[
+            {kind:'gzip',label:'v4-base-MA18',files:['04.part1','04.part2','04.part3']},
+            {kind:'gzip',label:'MA19',files:['19.g1','19.g2','19.g3']},
+            {kind:'plain',label:'MA20',files:['20.md']},
+          ]);
+          consolidate(8,[
+            {kind:'gzip',label:'v8-base-MA32',files:['08.part1']},
+            {kind:'gzip',label:'MA33',files:['33x.g1','33x.g2','33x.g3','33x.g4','33x.g5']},
+            {kind:'gzip',label:'MA34',files:['34x.g1','34x.g2','34x.g3']},
+            {kind:'gzip',label:'MA35',files:['35x.g1','35x.g2','35x.g3','35x.g4']},
+          ]);
+          fs.mkdirSync('.deployment',{recursive:true});
+          fs.writeFileSync('.deployment/ma-repair-report.txt',report.join('\n')+'\n');
+          console.log(report.join('\n'));
+          NODE
+
+      - name: Commit repair outputs and report
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add ma/data/03.full.md ma/data/04.full.md ma/data/08.full.md .deployment/ma-repair-report.txt 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo 'No generated repair outputs to commit.'
+          else
+            git commit -m 'Generate consolidated MA volume repair files'
+            git push
+          fi
