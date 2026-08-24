@@ -75,6 +75,8 @@ jobs:
           test -f ma/index.html
           test -f ma/reader.html
           test -f ma/reader.js
+          test -f ma/read.html
+          test -f ma/read.js
           test -f ma/app.js
           test -f ma/volumes.js
           test -f ma/toc.html
@@ -122,6 +124,33 @@ jobs:
           NODE
 
           echo "Agama source verification passed through volume ${latest_vol}."
+
+      - name: Materialize MA11 and MA18 as plain Markdown
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const zlib=require('zlib');
+          function materialize(base,count,out,needle){
+            let b64='';
+            for(let i=1;i<=count;i++) b64+=fs.readFileSync(`ma/data/${base}.part${i}`,'utf8');
+            b64=b64.replace(/\s+/g,'');
+            const rem=b64.length%4;
+            if(rem===1) throw new Error(`${base}: invalid base64 length ${b64.length}`);
+            if(rem) b64+='='.repeat(4-rem);
+            const md=zlib.gunzipSync(Buffer.from(b64,'base64')).toString('utf8');
+            if(!md.includes(needle)) throw new Error(`${base}: decoded Markdown is not ${needle}`);
+            fs.writeFileSync(`ma/data/${out}`,md,'utf8');
+            console.log(`Materialized ${out}: ${md.length} chars`);
+          }
+          materialize('03',3,'11.md','제11경');
+          materialize('04',3,'18.md','제18경');
+          NODE
+          test -s ma/data/11.md
+          test -s ma/data/18.md
+          grep -q '염유경' ma/data/11.md
+          grep -q '사자경' ma/data/18.md
 
       - name: Stage Pages artifact
         shell: bash
@@ -174,7 +203,7 @@ jobs:
 
           ok=0
           for i in $(seq 1 12); do
-            rm -f /tmp/agama-health /tmp/agama-index /tmp/agama-reader /tmp/agama-volumes /tmp/agama-latest /tmp/agama-ma-index /tmp/agama-ma-reader /tmp/agama-ma-data
+            rm -f /tmp/agama-health /tmp/agama-index /tmp/agama-reader /tmp/agama-volumes /tmp/agama-latest /tmp/agama-ma-index /tmp/agama-ma-reader /tmp/agama-ma-data /tmp/agama-ma11 /tmp/agama-ma18
             if curl -fsSL --max-time 20 "${base}health.txt" -o /tmp/agama-health \
               && curl -fsSL --max-time 20 "${base}" -o /tmp/agama-index \
               && curl -fsSL --max-time 20 "${base}reader.html?vol=${latest_vol}" -o /tmp/agama-reader \
@@ -183,6 +212,8 @@ jobs:
               && curl -fsSL --max-time 20 "${base}ma/" -o /tmp/agama-ma-index \
               && curl -fsSL --max-time 20 "${base}ma/reader.html?vol=1" -o /tmp/agama-ma-reader \
               && curl -fsSL --max-time 20 "${base}ma/data/01.part1" -o /tmp/agama-ma-data \
+              && curl -fsSL --max-time 20 "${base}ma/data/11.md" -o /tmp/agama-ma11 \
+              && curl -fsSL --max-time 20 "${base}ma/data/18.md" -o /tmp/agama-ma18 \
               && grep -q 'agama-pages-ok' /tmp/agama-health \
               && grep -q "제1~${latest_vol}권" /tmp/agama-index \
               && grep -q "제1~${latest_end}경" /tmp/agama-index \
@@ -190,11 +221,13 @@ jobs:
               && grep -q "\[${latest_vol},${latest_start},${latest_end},${latest_count},\"published\"" /tmp/agama-volumes \
               && grep -q "제${latest_vol}권" /tmp/agama-latest \
               && grep -q '중아함경 쉬운 완전읽기' /tmp/agama-ma-index \
-              && grep -q '중아함경 쉬운 완전읽기' /tmp/agama-ma-reader; then
+              && grep -q '중아함경 쉬운 완전읽기' /tmp/agama-ma-reader \
+              && grep -q '염유경' /tmp/agama-ma11 \
+              && grep -q '사자경' /tmp/agama-ma18; then
               ok=1
               break
             fi
             sleep 5
           done
           test "$ok" -eq 1
-          echo "Verified live site through Agama volume ${latest_vol}: ${base}"
+          echo "Verified live site through Agama volume ${latest_vol}, including MA11 and MA18 plain Markdown: ${base}"
