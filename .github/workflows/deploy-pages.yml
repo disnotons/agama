@@ -49,6 +49,7 @@ jobs:
           test -f ma/data/04.part1
           test -f ma/data/04.part2
           test -f ma/data/04.part3
+          grep -q 'DecompressionStream' ma/read.js
           echo 'Source files present.'
 
       - name: Diagnostic check for MA11 and MA18 bundles
@@ -110,8 +111,8 @@ jobs:
           for i in $(seq 1 12); do
             rm -f /tmp/health /tmp/readhtml /tmp/readjs /tmp/03p1 /tmp/03p2 /tmp/03p3 /tmp/04p1 /tmp/04p2 /tmp/04p3
             if curl -fsSL --max-time 20 "${base}health.txt" -o /tmp/health \
-              && curl -fsSL --max-time 20 "${base}ma/read.html?r=20260824f" -o /tmp/readhtml \
-              && curl -fsSL --max-time 20 "${base}ma/read.js?r=20260824f" -o /tmp/readjs \
+              && curl -fsSL --max-time 20 "${base}ma/read.html?r=20260824g" -o /tmp/readhtml \
+              && curl -fsSL --max-time 20 "${base}ma/read.js?r=20260824g" -o /tmp/readjs \
               && curl -fsSL --max-time 20 "${base}ma/data/03.part1" -o /tmp/03p1 \
               && curl -fsSL --max-time 20 "${base}ma/data/03.part2" -o /tmp/03p2 \
               && curl -fsSL --max-time 20 "${base}ma/data/03.part3" -o /tmp/03p3 \
@@ -119,9 +120,10 @@ jobs:
               && curl -fsSL --max-time 20 "${base}ma/data/04.part2" -o /tmp/04p2 \
               && curl -fsSL --max-time 20 "${base}ma/data/04.part3" -o /tmp/04p3 \
               && grep -q 'agama-pages-ok' /tmp/health \
-              && grep -q '20260824f' /tmp/readhtml \
+              && grep -q '20260824g' /tmp/readhtml \
               && grep -q "no:11,title:'염유경',kind:'base'" /tmp/readjs \
-              && grep -q "no:18,title:'사자경',kind:'base'" /tmp/readjs; then
+              && grep -q "no:18,title:'사자경',kind:'base'" /tmp/readjs \
+              && grep -q 'DecompressionStream' /tmp/readjs; then
               ok=1
               break
             fi
